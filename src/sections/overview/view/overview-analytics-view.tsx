@@ -164,7 +164,7 @@ export function OverviewAnalyticsView() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 6, lg: 12 }}>
-          <AnalyticsNews title="News" list={_posts.slice(0, 5)} />
+          <AnalyticsNews title="News" />
         </Grid>
       </Grid>
     </DashboardContent>
