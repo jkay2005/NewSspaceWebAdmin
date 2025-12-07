@@ -1,6 +1,7 @@
 import type { BoxProps } from '@mui/material/Box';
 import type { CardProps } from '@mui/material/Card';
 
+import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
@@ -11,12 +12,35 @@ import Avatar from '@mui/material/Avatar';
 import CardHeader from '@mui/material/CardHeader';
 import Typography from '@mui/material/Typography';
 
-import { fToNow } from 'src/utils/format-time';
-
 import api from 'src/services/api';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+
+// ----------------------------------------------------------------------
+
+const fallbackCover = '/assets/images/cover/cover-1.webp';
+
+function extractContent(htmlString: string) {
+  if (typeof window === 'undefined' || !htmlString) {
+    return { description: '', coverUrl: fallbackCover };
+  }
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlString, 'text/html');
+
+  // Find the first image for the cover
+  const firstImage = doc.querySelector('img');
+  const coverUrl = firstImage?.src || fallbackCover;
+
+  // Extract text and find the first meaningful sentence for description
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = htmlString;
+  const textContent = tempDiv.textContent || tempDiv.innerText || '';
+  const description = textContent.trim().split('. ')[0] || '';
+
+  return { description, coverUrl };
+}
 
 // ----------------------------------------------------------------------
 
@@ -44,13 +68,16 @@ export function AnalyticsNews({ title, subheader, list, sx, ...other }: Props) {
       api
         .get('/api/articles', { params: { page: 1, limit: 5 } })
         .then((res) => {
-          const items: Article[] = (res.data || []).map((a: any) => ({
-            id: a.id?.toString() || `${Math.random()}`,
-            title: a.title || a.rssItem?.topic,
-            description: a.description || a.rssItem?.summary,
-            coverUrl: a.coverUrl || a.image,
-            createdAt: a.createdAt,
-          }));
+          const items: Article[] = (res.data || []).map((a: any) => {
+            const { description, coverUrl } = extractContent(a.content);
+            return {
+              id: a.id?.toString() || `${Math.random()}`,
+              title: a.title || a.rssItem?.topic,
+              description,
+              coverUrl,
+              createdAt: a.createdAt,
+            };
+          });
           setArticles(items);
         })
         .catch((err) => {
@@ -91,6 +118,8 @@ type ItemProps = BoxProps & {
 };
 
 function Item({ item, sx, ...other }: ItemProps) {
+  const createdAt = item.createdAt ? format(new Date(item.createdAt), 'dd/MM/yyyy') : '';
+
   return (
     <Box
       sx={[
@@ -125,9 +154,9 @@ function Item({ item, sx, ...other }: ItemProps) {
         </Typography>
       </Box>
 
-      <Box sx={{ flexShrink: 0, typography: 'caption', color: 'text.disabled' }}>
-        {fToNow(item.createdAt)}
-      </Box>
+      <Typography variant="caption" sx={{ flexShrink: 0, color: 'text.secondary' }}>
+        {createdAt}
+      </Typography>
     </Box>
   );
 }

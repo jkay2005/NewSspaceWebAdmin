@@ -4,7 +4,6 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 
 import api from 'src/services/api';
-import { _posts } from 'src/_mock';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { AnalyticsNews } from '../analytics-news';
@@ -15,8 +14,21 @@ import { AnalyticsConversionRates } from '../analytics-conversion-rates';
 
 // ----------------------------------------------------------------------
 
+type Article = {
+  id: string;
+  rssItem?: {
+    topic?: string;
+  };
+  [key: string]: any;
+};
+
 export function OverviewAnalyticsView() {
-  const [stats, setStats] = useState({ users: 0, blogs: 0, articles: 0 });
+  const [stats, setStats] = useState({ users: 0, blogs: 0, articles: 0, rssItems: 0 });
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [categoryChart, setCategoryChart] = useState<{ categories: string[]; series: { name: string; data: number[] }[] }>({
+    categories: [],
+    series: [{ name: 'News', data: [] }],
+  });
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -28,7 +40,35 @@ export function OverviewAnalyticsView() {
       }
     };
 
+    const fetchArticlesAndProcessCategories = async () => {
+      try {
+        // Fetch a larger number of articles for statistics
+        const response = await api.get('/api/articles', { params: { limit: 100 } });
+        const fetchedArticles: Article[] = response.data || [];
+        setArticles(fetchedArticles);
+
+        // Process articles to get category counts
+        const topicCounts = fetchedArticles.reduce((acc: { [key: string]: number }, article) => {
+          const topic = article.rssItem?.topic || 'Chưa phân loại';
+          acc[topic] = (acc[topic] || 0) + 1;
+          return acc;
+        }, {});
+
+        const categories = Object.keys(topicCounts);
+        const data = Object.values(topicCounts);
+
+        setCategoryChart({
+          categories,
+          series: [{ name: 'News', data }],
+        });
+
+      } catch (error) {
+        console.error('Failed to fetch articles for category chart:', error);
+      }
+    };
+
     fetchStats();
+    fetchArticlesAndProcessCategories();
   }, []);
 
   return (
@@ -53,11 +93,11 @@ export function OverviewAnalyticsView() {
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <AnalyticsWidgetSummary
-            title="New users"
-            percent={-0.1}
-            total={1352831}
+            title="RSS Items"
+            percent={0}
+            total={stats.rssItems}
             color="secondary"
-            icon={<img alt="New users" src="/assets/icons/glass/ic-glass-users.svg" />}
+            icon={<img alt="RSS Items" src="/assets/icons/glass/ic-glass-buy.svg" />}
             chart={{
               categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
               series: [56, 47, 40, 62, 73, 30, 23, 54],
@@ -109,8 +149,8 @@ export function OverviewAnalyticsView() {
 
         <Grid size={{ xs: 12, md: 6, lg: 8 }}>
           <AnalyticsWebsiteVisits
-            title="News/Blogs"
-            subheader="(+43%) than last year"
+            title="News"
+            subheader=""
             chart={{
               categories: [
                 'Jan',
@@ -137,34 +177,12 @@ export function OverviewAnalyticsView() {
         <Grid size={{ xs: 12, md: 6, lg: 12 }}>
           <AnalyticsConversionRates
             title="Category"
-            chart={{
-              // 16 categories
-              categories: [
-                'Thời sự',
-                'Chính trị',
-                'Thế giới',
-                'Kinh tế',
-                'Đời sống',
-                'Du lịch',
-                'Văn hóa',
-                'Giải trí',
-                'Giới trẻ',
-                'Giáo dục',
-                'Thể thao',
-                'Sức khỏe',
-                'Công nghệ',
-                'Thời trang',
-                'Xe',
-                'Tiêu dùng',
-              ],
-              // single series to display a single horizontal bar per category
-              series: [{ name: 'News', data: [120, 98, 75, 160, 110, 85, 70, 140, 95, 130, 88, 102, 60, 78, 56, 45] }],
-            }}
+            chart={categoryChart}
           />
         </Grid>
 
         <Grid size={{ xs: 12, md: 6, lg: 12 }}>
-          <AnalyticsNews title="News" />
+          <AnalyticsNews title="News" list={articles.slice(0, 5)} />
         </Grid>
       </Grid>
     </DashboardContent>
