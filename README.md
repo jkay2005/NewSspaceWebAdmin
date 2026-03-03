@@ -1,10 +1,20 @@
 ## Web Admin NewsSpace (From Minimal UI) 
 
+> React Admin Dashboard made with Material-UI components and React + Vite.js.
+
 ![license](https://img.shields.io/badge/license-MIT-blue.svg)
 
-![preview](public/assets/images/minimal-free-preview.jpg)
+> Đăng nhập.
 
-> React Admin Dashboard made with Material-UI components and React + Vite.js.
+![preview](public/assets/images/Picture1.png)
+
+> Dashboard
+
+![preview](public/assets/images/Picture2.png)
+
+> Users
+
+![preview](public/assets/images/Picture3.png)
 
 ## Mô Tả
 
