@@ -22,7 +22,7 @@
 
 ## Cách dùng
 
-- Clone the repo: ``
+- Clone the repo: `https://github.com/jkay2005/NewSspaceWebAdmin.git`
 - Yêu cầu: `Node.js v20.x`
 - **Install:** `npm i` or `yarn install`
 - **Start:** `npm run dev` or `yarn dev`
